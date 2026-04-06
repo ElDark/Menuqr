@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial;
+  background: #f5f5f5;
+  padding: 10px;
+}
+
+.container {
+  max-width: 400px;
+  margin: auto;
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.category {
+  margin-top: 15px;
+  font-weight: bold;
+  color: #e63946;
+}
+
+.item {
+  margin-top: 8px;
+}
+
+.price {
+  float: right;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">Cargando menú...</div>
+
+<script>
+const sheetURL = "PASTE_CSV_LINK_HERE";
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+function parseCSV(text) {
+  const lines = text.trim().split("\n");
+  const sep = lines[0].includes("\t") ? "\t" : ",";
+  const rows = lines.map(l => l.split(sep));
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+
+  return rows.slice(1).map(row => {
+    let obj = {};
+    headers.forEach((h,i) => obj[h] = (row[i] || "").trim());
+    return obj;
+  });
+}
+
+fetch(sheetURL)
+  .then(res => res.text())
+  .then(csv => {
+    const data = parseCSV(csv);
+    const items = data.filter(r => r.id === id);
+
+    if (!items.length) {
+      document.getElementById("app").innerHTML = "Menú no encontrado";
+      return;
+    }
+
+    render(items);
+  });
+
+function render(items) {
+  let html = <div class="container">;
+  html += <div class="title">${items[0].name}</div>;
+
+  let currentCategory = "";
+
+  items.forEach(i => {
+    if (i.category !== currentCategory) {
+      currentCategory = i.category;
+      html += <div class="category">${currentCategory}</div>;
+    }
+
+    html += 
+      <div class="item">
+        ${i.item}
+        <span class="price">$${i.price}</span><br>
+        <small>${i.description}</small>
+      </div>
+    ;
+  });
+
+  html += </div>;
+  document.getElementById("app").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
